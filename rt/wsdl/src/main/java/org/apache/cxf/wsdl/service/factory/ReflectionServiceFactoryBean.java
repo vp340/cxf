@@ -49,6 +49,8 @@ import java.util.logging.Logger;
 import javax.wsdl.Operation;
 import javax.xml.namespace.QName;
 
+import org.apache.cxf.interceptor.CachedOutputStreamCloserInInterceptor;
+import org.apache.cxf.interceptor.CachedOutputStreamCloserOutInterceptor;
 import org.w3c.dom.DOMError;
 import org.w3c.dom.DOMErrorHandler;
 
@@ -2105,6 +2107,8 @@ public class ReflectionServiceFactoryBean extends org.apache.cxf.service.factory
 
     protected void initializeFaultInterceptors() {
         getService().getOutFaultInterceptors().add(new FaultOutInterceptor());
+        getService().getOutFaultInterceptors().add(new CachedOutputStreamCloserOutInterceptor());
+        getService().getInFaultInterceptors().add(new CachedOutputStreamCloserInInterceptor());
     }
 
     protected FaultInfo addFault(final InterfaceInfo service, final OperationInfo op,

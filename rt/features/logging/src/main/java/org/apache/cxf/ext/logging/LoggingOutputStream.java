@@ -20,6 +20,7 @@
 package org.apache.cxf.ext.logging;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.apache.cxf.io.CacheAndWriteOutputStream;
@@ -70,5 +71,12 @@ public class LoggingOutputStream extends CacheAndWriteOutputStream {
         skipFlushingFlowThroughStream = true;
         super.writeCacheTo(out, charsetName, limit);
         skipFlushingFlowThroughStream = false;
+    }
+
+    public InputStream getLogInputStream() throws IOException {
+        skipFlushingFlowThroughStream = true;
+        InputStream inputStream = super.getInputStream();
+        skipFlushingFlowThroughStream = false;
+        return inputStream;
     }
 }

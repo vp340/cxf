@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 
 import javax.xml.transform.dom.DOMSource;
 
+import org.apache.cxf.interceptor.*;
 import org.w3c.dom.Document;
 
 import org.apache.cxf.Bus;
@@ -38,9 +39,6 @@ import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.ModCountCopyOnWriteArrayList;
 import org.apache.cxf.databinding.AbstractDataBinding;
 import org.apache.cxf.databinding.DataBinding;
-import org.apache.cxf.interceptor.OneWayProcessorInterceptor;
-import org.apache.cxf.interceptor.OutgoingChainInterceptor;
-import org.apache.cxf.interceptor.ServiceInvokerInterceptor;
 import org.apache.cxf.resource.ResourceManager;
 import org.apache.cxf.resource.URIResolver;
 import org.apache.cxf.service.Service;
@@ -78,6 +76,8 @@ public abstract class AbstractServiceFactoryBean {
         service.getInInterceptors().add(new ServiceInvokerInterceptor());
         service.getInInterceptors().add(new OutgoingChainInterceptor());
         service.getInInterceptors().add(new OneWayProcessorInterceptor());
+        service.getInInterceptors().add(new CachedOutputStreamCloserInInterceptor());
+        service.getOutInterceptors().add(new CachedOutputStreamCloserOutInterceptor());
     }
 
     protected void initializeDataBindings() {
