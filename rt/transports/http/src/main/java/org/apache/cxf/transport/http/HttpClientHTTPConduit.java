@@ -673,10 +673,12 @@ public class HttpClientHTTPConduit extends URLConnectionHTTPConduit {
                         contentLen = stream.contentLen;
                     }
                     BodyPublishers.ofInputStream(pin).subscribe(subscriber);
+                    stream.markSubscriptionDone();
                     stream = null;
                     pin = null;
                     return;
                 }
+                stream.markSubscriptionDone();
             }
             BodyPublishers.noBody().subscribe(subscriber);
         }
@@ -725,10 +727,12 @@ public class HttpClientHTTPConduit extends URLConnectionHTTPConduit {
                     }
 
                     BodyPublishers.ofInputStream(pin).subscribe(subscriber);
+                    stream.markSubscriptionDone();
                     stream = null;
                     pin = null;
                     return;
                 }
+                stream.markSubscriptionDone();
             }
             BodyPublishers.noBody().subscribe(subscriber);
         }
@@ -845,6 +849,7 @@ public class HttpClientHTTPConduit extends URLConnectionHTTPConduit {
         int rtimeout;
         volatile Throwable exception;
         volatile boolean connectionComplete;
+        volatile boolean subscriptionDone;
         OutputStream pout;
         CloseableBodyPublisher publisher;
         HttpRequest request;
@@ -861,6 +866,22 @@ public class HttpClientHTTPConduit extends URLConnectionHTTPConduit {
         public void close() throws IOException {
             try {
                 super.close();
+                synchronized (this) {
+                    long subscriberTimeout = 1000L;
+                    long deadline = System.currentTimeMillis() + subscriberTimeout;
+                    while (!subscriptionDone && subscriberTimeout > 0) {
+                        try {
+                            System.out.println("Wait for subscriber: " + subscriberTimeout);
+                            this.wait(subscriberTimeout);
+                        } catch (InterruptedException e) {
+                            System.out.println("Catch waiting");
+                            Thread.currentThread().interrupt();
+                            logStackTrace(e);
+                            break;
+                        }
+                        subscriberTimeout = deadline - System.currentTimeMillis();
+                    }
+                }
             } finally {
                 if (pout != null) {
                     try {
@@ -883,6 +904,11 @@ public class HttpClientHTTPConduit extends URLConnectionHTTPConduit {
             }
             
             
+        }
+        public synchronized void markSubscriptionDone() {
+            System.out.println("Subscriber arrived");
+            this.subscriptionDone = true;
+            this.notifyAll();
         }
         void addSubscriber(Flow.Subscriber<? super ByteBuffer> subscriber) {
             subscribers.add(subscriber);
